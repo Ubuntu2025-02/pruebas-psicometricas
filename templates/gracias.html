@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gracias por su cooperación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ffffff;
+        }
+
+        .emoji {
+            position: absolute;
+            font-size: 2rem;
+            bottom: -100px;
+            animation: float 5s linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh);
+                opacity: 0;
+            }
+        }
+
+        /* Generación dinámica de emojis */
+        .emoji:nth-child(1) { left: 5%; animation-duration: 10s; }
+        .emoji:nth-child(2) { left: 15%; animation-duration: 8s; }
+        .emoji:nth-child(3) { left: 25%; animation-duration: 12s; }
+        .emoji:nth-child(4) { left: 35%; animation-duration: 9s; }
+        .emoji:nth-child(5) { left: 45%; animation-duration: 11s; }
+        .emoji:nth-child(6) { left: 55%; animation-duration: 7s; }
+        .emoji:nth-child(7) { left: 65%; animation-duration: 10s; }
+        .emoji:nth-child(8) { left: 75%; animation-duration: 8s; }
+        .emoji:nth-child(9) { left: 85%; animation-duration: 12s; }
+        .emoji:nth-child(10) { left: 95%; animation-duration: 9s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gracias por su cooperación al realizar la encuesta</h1>
+    </div>
+
+    <!-- Emojis animados de fondo -->
+    <div class="emoji">😊</div>
+    <div class="emoji">🙏</div>
+    <div class="emoji">🌟</div>
+    <div class="emoji">🎉</div>
+    <div class="emoji">💖</div>
+    <div class="emoji">😄</div>
+    <div class="emoji">👏</div>
+    <div class="emoji">✨</div>
+    <div class="emoji">🌸</div>
+    <div class="emoji">🚀</div>
+</body>
+</html>

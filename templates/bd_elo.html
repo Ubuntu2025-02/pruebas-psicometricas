@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Datos ELO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #ffcccc; /* Fondo rojo sangre claro */
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            background-color: #ff6666; /* Fondo rojo más oscuro para el título */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .buscador {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .buscador input {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white; /* Fondo blanco para la tabla */
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+        .boton {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .boton.mostrar {
+            background-color: #4CAF50; /* Verde */
+            color: white;
+        }
+        .boton.descargar {
+            background-color: #008CBA; /* Azul */
+            color: white;
+        }
+        /* Estilos para la ventana emergente */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semi-transparente */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-contenido {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        .modal-cerrar {
+            background-color: #ff6666;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .grafica {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+    </style>
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF para descargar en PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h1>Base de Datos ELO</h1>
+
+    <!-- Buscador por nombre -->
+    <div class="buscador">
+        <input type="text" id="buscador-nombre" placeholder="Buscar por nombre...">
+    </div>
+
+    <!-- Tabla para mostrar los registros -->
+    <div id="contenedor-registros">
+        <p class="error" id="mensaje-error"></p>
+        <table id="tabla-registros">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Nombre</th>
+                    <th>Edad</th>
+                    <th>Resultados</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los registros se insertarán aquí dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Ventana emergente (modal) -->
+    <div id="modal" class="modal">
+        <div class="modal-contenido">
+            <h2 id="modal-titulo"></h2>
+            <canvas id="grafica" class="grafica"></canvas>
+            <button class="modal-cerrar" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        // Función para obtener y mostrar los registros
+        async function obtenerRegistros() {
+            try {
+                const response = await fetch('/obtener-registros');
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos');
+                }
+                const registros = await response.json();
+                mostrarRegistros(registros); // Mostrar todos los registros inicialmente
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('mensaje-error').textContent = 'Hubo un error al cargar los datos.';
+            }
+        }
+
+        // Función para mostrar los registros en la tabla
+        function mostrarRegistros(registros) {
+            const tbody = document.querySelector('#tabla-registros tbody');
+            tbody.innerHTML = ''; // Limpiar la tabla antes de agregar nuevos datos
+
+            registros.forEach(registro => {
+                const fila = document.createElement('tr');
+
+                const celdaFecha = document.createElement('td');
+                celdaFecha.textContent = registro.fecha;
+                fila.appendChild(celdaFecha);
+
+                const celdaNombre = document.createElement('td');
+                celdaNombre.textContent = registro.nombre;
+                fila.appendChild(celdaNombre);
+
+                const celdaEdad = document.createElement('td');
+                celdaEdad.textContent = registro.edad;
+                fila.appendChild(celdaEdad);
+
+                const celdaResultados = document.createElement('td');
+                const botonMostrar = document.createElement('button');
+                botonMostrar.textContent = 'Mostrar';
+                botonMostrar.className = 'boton mostrar';
+                botonMostrar.onclick = () => mostrarModal(registro);
+                celdaResultados.appendChild(botonMostrar);
+
+                const botonDescargar = document.createElement('button');
+                botonDescargar.textContent = 'Descargar';
+                botonDescargar.className = 'boton descargar';
+                botonDescargar.onclick = () => descargarPDF(registro);
+                celdaResultados.appendChild(botonDescargar);
+
+                fila.appendChild(celdaResultados);
+                tbody.appendChild(fila);
+            });
+        }
+
+        // Función para mostrar la ventana emergente con la gráfica
+        function mostrarModal(registro) {
+            const modal = document.getElementById('modal');
+            const modalTitulo = document.getElementById('modal-titulo');
+            const canvas = document.getElementById('grafica');
+
+            // Mostrar el modal
+            modal.style.display = 'flex';
+            modalTitulo.textContent = `Resultados de ${registro.nombre} (${registro.edad} años) - ${registro.fecha}`;
+
+            // Destruir la gráfica anterior si existe
+            if (window.graficaInstance) {
+                window.graficaInstance.destroy();
+            }
+
+            // Crear la gráfica de barras
+            const ctx = canvas.getContext('2d');
+            window.graficaInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['ED', 'EI', 'EL', 'GN', 'GP', 'R'],
+                    datasets: [{
+                        label: 'Resultados',
+                        data: [
+                            registro.resultados.ED,
+                            registro.resultados.EI,
+                            registro.resultados.EL,
+                            registro.resultados.GN,
+                            registro.resultados.GP,
+                            registro.resultados.R
+                        ],
+                        backgroundColor: [
+                            '#ff9999', // ED
+                            '#99ccff', // EI
+                            '#99ff99', // EL
+                            '#ffcc99', // GN
+                            '#cc99ff', // GP
+                            '#ffff99'  // R
+                        ],
+                        borderColor: [
+                            '#ff6666',
+                            '#6699ff',
+                            '#66cc66',
+                            '#ff9966',
+                            '#9966cc',
+                            '#cccc66'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Función para cerrar la ventana emergente
+        function cerrarModal() {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'none';
+        }
+
+        // Función para descargar los resultados en PDF
+        function descargarPDF(registro) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Título
+            doc.setFontSize(18);
+            doc.text(`Resultados de ${registro.nombre}`, 10, 10);
+
+            // Información del registro
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${registro.fecha}`, 10, 20);
+            doc.text(`Edad: ${registro.edad} años`, 10, 30);
+
+            // Gráfica de barras
+            const canvas = document.getElementById('grafica');
+            const image = canvas.toDataURL('image/png');
+            doc.addImage(image, 'PNG', 10, 40, 180, 100);
+
+            // Tabla de porcentajes
+            const categorias = ['ED', 'EI', 'EL', 'GN', 'GP', 'R'];
+            const porcentajes = categorias.map(cat => registro.resultados[cat]);
+
+            doc.setFontSize(14);
+            doc.text('Porcentajes por categoría:', 10, 150);
+
+            let y = 160;
+            categorias.forEach((cat, index) => {
+                doc.text(`${cat}: ${porcentajes[index]}%`, 10, y);
+                y += 10;
+            });
+
+            // Descargar el PDF
+            doc.save(`resultados_${registro.nombre}.pdf`);
+        }
+
+        // Evento para el buscador
+        document.getElementById('buscador-nombre').addEventListener('input', (event) => {
+            const nombre = event.target.value.trim();
+            filtrarPorNombre(nombre);
+        });
+
+        // Función para filtrar registros por nombre
+        function filtrarPorNombre(nombre) {
+            const tbody = document.querySelector('#tabla-registros tbody');
+            const filas = tbody.querySelectorAll('tr');
+
+            filas.forEach(fila => {
+                const celdaNombre = fila.querySelector('td:nth-child(2)'); // La segunda columna es el nombre
+                if (celdaNombre.textContent.toLowerCase().includes(nombre.toLowerCase())) {
+                    fila.style.display = ''; // Mostrar la fila
+                } else {
+                    fila.style.display = 'none'; // Ocultar la fila
+                }
+            });
+        }
+
+        // Cargar los registros cuando la página se cargue
+        document.addEventListener('DOMContentLoaded', obtenerRegistros);
+    </script>
+</body>
+</html>

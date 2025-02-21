@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: url('https://i.pinimg.com/736x/12/f3/86/12f3862504a102810fb4fb72344b5d6c.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #b22222;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            color: #b22222;
+        }
+
+        .btn {
+            background: #b22222;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #8b0000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 0, 0, 0.3);
+        }
+
+        .check-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .check-icon:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://img.freepik.com/vector-gratis/garrapata-dibujada-mano_78370-490.jpg" alt="Check" class="check-icon" onclick="window.location.href='/';">        
+        <h1 class="title">Bienvenido</h1>
+        <p class="subtitle">Que resultados quiere revisar</p>
+        <a href="/resultados-disc" class="btn">Ver Resultados DISC</a>
+        <a href="/resultados-elo" class="btn">Ver Resultados ELO</a>
+        
+    </div>
+</body>
+</html>

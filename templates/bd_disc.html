@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados DISC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #ffcccc; /* Fondo rojo sangre claro */
+            color: white; /* Texto blanco para contraste */
+        }
+        h1 {
+            text-align: center;
+            color: white; /* Título en blanco */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white; /* Fondo blanco para la tabla */
+            color: black; /* Texto negro para la tabla */
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .btn {
+            margin: 0 5px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-show {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-download {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn-close {
+            background-color: #ffcccc;
+            color: white;
+            display: block;
+            margin: 20px auto 0;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
+            color: black; /* Texto negro para el modal */
+        }
+        .search-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .search-container input {
+            padding: 8px;
+            width: 300px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Resultados de la Prueba DISC</h1>
+    <div class="search-container">
+        <input type="text" id="buscador" placeholder="Buscar por nombre..." oninput="filtrarTabla()">
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tablaResultados">
+            {% for resultado in resultados %}
+            <tr data-resultado='{{ resultado | tojson | safe }}'>
+                <td>{{ resultado.fecha }}</td>
+                <td>{{ resultado.nombre }}</td>
+                <td>{{ resultado.edad }}</td>
+                <td></td> <!-- Aquí se agregarán los botones dinámicamente -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Modal para mostrar detalles -->
+    <div id="modalDetalles" class="modal">
+        <div class="modal-content">
+            <h2>Detalles del Resultado</h2>
+            <p><strong>Fecha:</strong> <span id="modalFecha"></span></p>
+            <p><strong>Nombre:</strong> <span id="modalNombre"></span></p>
+            <p><strong>Edad:</strong> <span id="modalEdad"></span></p>
+            <p><strong>Código Final:</strong> <span id="modalCodigoFinal"></span></p>
+            <p><strong>Nombre del Patrón:</strong> <span id="modalNombrePatron"></span></p>
+            <h3>Características:</h3>
+            <ul id="modalCaracteristicas"></ul>
+            <button class="btn btn-close" id="btnCerrarModal">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tabla = document.getElementById("tablaResultados");
+
+            // Agregar botones dinámicamente
+            tabla.querySelectorAll("tr").forEach(tr => {
+                const resultado = JSON.parse(tr.dataset.resultado);
+                const tdAcciones = tr.children[3];
+
+                // Botón "Mostrar"
+                const btnMostrar = document.createElement("button");
+                btnMostrar.classList.add("btn", "btn-show");
+                btnMostrar.textContent = "Mostrar";
+                btnMostrar.addEventListener("click", () => mostrarDetalles(resultado));
+
+                // Botón "Descargar PDF"
+                const btnDescargar = document.createElement("button");
+                btnDescargar.classList.add("btn", "btn-download");
+                btnDescargar.textContent = "Descargar PDF";
+                btnDescargar.addEventListener("click", () => descargarPDF(resultado));
+
+                // Agregar botones a la celda
+                tdAcciones.appendChild(btnMostrar);
+                tdAcciones.appendChild(btnDescargar);
+            });
+
+            // Evento para cerrar el modal
+            document.getElementById("btnCerrarModal").addEventListener("click", cerrarModal);
+        });
+
+        // Función para filtrar la tabla por nombre
+        function filtrarTabla() {
+            const input = document.getElementById("buscador");
+            const filtro = input.value.toUpperCase();
+            const tabla = document.getElementById("tablaResultados");
+            const filas = tabla.getElementsByTagName("tr");
+
+            for (let i = 0; i < filas.length; i++) {
+                const celdaNombre = filas[i].getElementsByTagName("td")[1];
+                if (celdaNombre) {
+                    const nombre = celdaNombre.textContent || celdaNombre.innerText;
+                    if (nombre.toUpperCase().indexOf(filtro) > -1) {
+                        filas[i].style.display = "";
+                    } else {
+                        filas[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        // Función para mostrar el modal con los detalles
+        function mostrarDetalles(resultado) {
+            document.getElementById('modalFecha').textContent = resultado.fecha;
+            document.getElementById('modalNombre').textContent = resultado.nombre;
+            document.getElementById('modalEdad').textContent = resultado.edad;
+            document.getElementById('modalCodigoFinal').textContent = resultado.resultados.codigoFinal;
+            document.getElementById('modalNombrePatron').textContent = resultado.pattern.nombre;
+
+            // Limpiar y actualizar lista de características
+            const listaCaracteristicas = document.getElementById('modalCaracteristicas');
+            listaCaracteristicas.innerHTML = '';
+            Object.entries(resultado.pattern.caracteristicas).forEach(([key, value]) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${key}:</strong> ${value}`;
+                listaCaracteristicas.appendChild(li);
+            });
+
+            // Mostrar el modal
+            document.getElementById('modalDetalles').style.display = 'block';
+        }
+
+        // Función para cerrar el modal
+        function cerrarModal() {
+            document.getElementById('modalDetalles').style.display = 'none';
+        }
+
+        // Función para descargar PDF
+        function descargarPDF(resultado) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Configuración de fuente y márgenes
+            doc.setFont("helvetica");
+            doc.setFontSize(16);
+            doc.text("Resultados de la Prueba DISC", 20, 20);
+
+            let y = 40; // Posición inicial Y
+
+            // Datos principales
+            doc.setFontSize(12);
+            doc.text(`Fecha: ${resultado.fecha}`, 20, y); y += 10;
+            doc.text(`Nombre: ${resultado.nombre}`, 20, y); y += 10;
+            doc.text(`Edad: ${resultado.edad}`, 20, y); y += 10;
+            doc.text(`Código Final: ${resultado.resultados.codigoFinal}`, 20, y); y += 10;
+            doc.text(`Nombre del Patrón: ${resultado.pattern.nombre}`, 20, y); y += 15;
+
+            // Características antes de las observaciones
+            doc.setFontSize(14);
+            doc.text("Características:", 20, y); 
+            y += 10;
+
+            doc.setFontSize(12);
+            let observaciones = []; // Guardaremos las observaciones aquí
+
+            Object.entries(resultado.pattern.caracteristicas).forEach(([key, value]) => {
+                if (key.toLowerCase().includes("observacion")) {
+                    observaciones.push(`• ${key}: ${value}`); // Guardar observaciones para el final
+                } else {
+                    let textoFormateado = doc.splitTextToSize(`• ${key}: ${value}`, 170);
+                    doc.text(textoFormateado, 25, y);
+                    y += textoFormateado.length * 7;
+                }
+            });
+
+            // Espacio antes de las observaciones
+            y += 10;
+            doc.setFontSize(14);
+            doc.text("Observaciones:", 20, y);
+            y += 10;
+            doc.setFontSize(12);
+
+            // Imprimir observaciones separadamente
+            observaciones.forEach((obs) => {
+                let textoFormateado = doc.splitTextToSize(obs, 170);
+                doc.text(textoFormateado, 25, y);
+                y += textoFormateado.length * 7;
+            });
+
+            // Guardar el PDF con el nombre del usuario
+            const nombreArchivo = `resultado_disc_${resultado.nombre.replace(/\s+/g, '_')}.pdf`;
+            doc.save(nombreArchivo);
+        }
+    </script>
+</body>
+</html>

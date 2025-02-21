@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Psicológica ELO</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .radio-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #1557b0;
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .radio-group {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prueba Psicológica ELO</h1>
+
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">Nombre completo:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Edad:</label>
+                <input type="number" id="age" name="age" required>
+            </div>
+
+            <div class="instructions">
+                <p>En la siguiente tabla tiene una serie de frases que caracterizan conductas. Valore cada una de ellas del 1 al 10:</p>
+                <ul>
+                    <li>10 puntos: Si la conducta refleja su comportamiento fielmente</li>
+                    <li>1 punto: Si la conducta no refleja su comportamiento</li>
+                    <li>5 puntos: Si manifiesta esta conducta de vez en cuando</li>
+                    <li>Valores intermedios (2,3,4 o 6,7,8,9): Para conductas que se acercan o alejan de su comportamiento promedio</li>
+                </ul>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Pregunta</th>
+                        <th>Valoración (1-10)</th>
+                    </tr>
+                </thead>
+                <tbody id="questionTableBody">
+                </tbody>
+            </table>
+
+            <button type="submit">Calcular Resultados</button>
+        </form>
+
+        <div id="results" class="results"></div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        const preguntas = [
+            "¿CRITICAS LO QUE TE RODEA?", "¿TE PREOCUPAS POR LOS DEMAS?",
+            "¿CONFRONTAS CON LA REALIDAD?", "¿ACTUAS EN FORMA NATURAL?",
+            "¿ORIGINAS CONFLICTOS SIN QUERER?", "¿TE SIENTES CON ACTITUD NERVIOSA?",
+            "¿TE GUSTA AMENAZAR?", "¿TE AGRADA ACONSEJAR Y ORIENTAR?",
+            "¿TE GUSTA ANALIZAR Y ORIENTAR?", "¿TE AGRADA SER ENTUSIASTA?",
+            "¿SIENTES ENVIDIA POR LOS DEMAS?", "¿TE GUSTA ORIENTAR A OTROS?",
+            "¿ERES SEVERO(A) Y EXIGENTE?", "¿TE GUSTA MOTIVAR E INCENTIVAR?",
+            "¿SOLICITAS Y BRINDAS INFORMACION?", "¿ERES VIVAZ E INTUITIVO (A)?",
+            "¿TE GUSTA CULPAR A LAS PERSONAS?", "¿TE SIENTES INSEGURO (A)?",
+            "¿ERES AUTORITARIO (A)?", "¿TE AGRADA PROTEGER Y ORIENTAR?",
+            "¿TOMAS INTERES EN APRENDER?", "¿TE GUSTA ESTAR ALEGRE?",
+            "¿ERES RESENTIDO (A)?", "¿ACEPTAS TODO DE LOS DEMAS?"
+        ];
+
+        const categorias = {
+            GP: [1, 7, 13, 19],
+            GN: [2, 8, 14, 20],
+            R: [3, 9, 15, 21],
+            EL: [4, 10, 16, 22],
+            EI: [5, 11, 17, 23],
+            ED: [6, 12, 18, 24]
+        };
+
+        function createRadioGroup(questionNumber) {
+            const div = document.createElement('div');
+            div.className = 'radio-group';
+            
+            for (let i = 1; i <= 10; i++) {
+                const label = document.createElement('label');
+                label.className = 'radio-option';
+                
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `q${questionNumber}`;
+                input.value = i;
+                input.required = true;
+                
+                const span = document.createElement('span');
+                span.textContent = i;
+                
+                label.appendChild(input);
+                label.appendChild(span);
+                div.appendChild(label);
+            }
+            
+            return div;
+        }
+
+        function initializeQuestions() {
+            const tbody = document.getElementById('questionTableBody');
+            
+            preguntas.forEach((pregunta, index) => {
+                const row = document.createElement('tr');
+                
+                const numCell = document.createElement('td');
+                numCell.textContent = index + 1;
+                
+                const questionCell = document.createElement('td');
+                questionCell.textContent = pregunta;
+                
+                const radioCell = document.createElement('td');
+                radioCell.appendChild(createRadioGroup(index + 1));
+                
+                row.appendChild(numCell);
+                row.appendChild(questionCell);
+                row.appendChild(radioCell);
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function calcularResultados() {
+            const resultados = {};
+            for (const [categoria, preguntas] of Object.entries(categorias)) {
+                const total = preguntas.reduce((sum, pregunta) => {
+                    const radio = document.querySelector(`input[name="q${pregunta}"]:checked`);
+                    return sum + (radio ? parseInt(radio.value) : 0);
+                }, 0);
+                resultados[categoria] = total * 2.5;
+            }
+            return resultados;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            setTimeout(() => {
+                errorDiv.textContent = '';
+            }, 3000);
+        }
+
+        function validateForm() {
+            const name = document.getElementById('name').value.trim();
+            const age = document.getElementById('age').value.trim();
+            
+            if (!name || !age) {
+                showError('Por favor complete nombre y edad');
+                return false;
+            }
+
+            for (let i = 1; i <= preguntas.length; i++) {
+                if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+                    showError(`Por favor responda la pregunta ${i}`);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+
+            const resultados = calcularResultados();
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <h3>Resultados:</h3>
+                <p>GP (Padre Protector): ${resultados.GP}%</p>
+                <p>GN (Padre Nutritivo): ${resultados.GN}%</p>
+                <p>R (Adulto): ${resultados.R}%</p>
+                <p>EL (Niño Libre): ${resultados.EL}%</p>
+                <p>EI (Niño Sumiso): ${resultados.EI}%</p>
+                <p>ED (Niño Rebelde): ${resultados.ED}%</p>
+            `;
+
+            const dataToSend = {
+                nombre: document.getElementById('name').value.trim(),
+                edad: document.getElementById('age').value.trim(),
+                fecha: new Date().toISOString(),
+                resultados: resultados
+            };
+
+            console.log('Datos a enviar:', dataToSend); // Depuración
+
+            // Enviar los resultados al backend
+            fetch('/guardar-resultados', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data); // Depuración
+                if (data.message) {
+                    alert(data.message); // Mostrar mensaje de éxito
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error); // Depuración
+                alert('Error al guardar los resultados'); // Mostrar mensaje de error
+            });
+        });
+
+        // Initialize questions when the page loads
+        initializeQuestions();
+    </script>
+</body>
+</html>
