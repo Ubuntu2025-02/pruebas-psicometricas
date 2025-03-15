@@ -320,39 +320,24 @@
             document.getElementById('discForm').reset();
         }
 
-        function guardarResultados(datos) {
-    try {
-        // Obtener resultados existentes del localStorage
-        let resultadosAnteriores = JSON.parse(localStorage.getItem('resultadosDisc')) || [];
-        
-        // Agregar el nuevo resultado
-        resultadosAnteriores.push(datos);
-        
-        // Guardar en localStorage
-        localStorage.setItem('resultadosDisc', JSON.stringify(resultadosAnteriores));
-
-        // Enviar datos al servidor
-        fetch('/guardar_resultados', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(datos)
-        })
-        .then(response => {
-            if (response.ok) {
-                mostrarMensaje('Resultados guardados correctamente.');
-            } else {
-                mostrarError('Error al guardar los resultados.');
-            }
-        })
-        .catch(error => {
+       function guardarResultados(datos) {
+    fetch('/guardar_resultados', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(response => {
+        if (response.ok) {
+            mostrarMensaje('Resultados guardados correctamente.');
+        } else {
             mostrarError('Error al guardar los resultados.');
-        });
-
-    } catch (error) {
+        }
+    })
+    .catch(error => {
         mostrarError('Error al guardar los resultados.');
-    }
+    });
 }
         // Función para mostrar mensajes de éxito
         function mostrarMensaje(mensaje) {
